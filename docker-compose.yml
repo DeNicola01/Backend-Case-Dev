@@ -1,0 +1,74 @@
+
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: BackendModule
+    ports:
+      - "${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"
+    volumes:
+      - .:/app
+    command: npm run dev
+    env_file:
+      - .env
+    depends_on:
+      - db
+    working_dir: /app
+    networks:
+      - backend
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: MigrationModule
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    env_file:
+      - .env
+    working_dir: /app
+    command: npx prisma migrate deploy
+    networks:
+      - backend
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: TestModule
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    env_file:
+      - .env
+    working_dir: /app
+    command: npx jest --coverage
+    networks:
+      - backend
+
+  db:
+    image: postgres:15
+    container_name: PostgresDB
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-planner}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-plannerpw}
+      POSTGRES_DB: ${DB_NAME:-plannerdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  pg_data:
