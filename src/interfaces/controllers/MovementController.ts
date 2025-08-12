@@ -11,7 +11,7 @@ export async function createMovementHandler(request: FastifyRequest, reply: Fast
     const body = request.body as {
       planningId: string;
       customerId: string;
-      type: string;
+      type: 'positive' | 'negative';
       value: number;
       frequency: 'one_time' | 'monthly' | 'yearly';
       date: string;
@@ -81,7 +81,7 @@ export async function updateMovementHandler(request: FastifyRequest, reply: Fast
 
     const id = (request.params as any).id;
     const body = request.body as Partial<{
-      type: string;
+      type: 'positive' | 'negative';
       value: number;
       frequency: 'one_time' | 'monthly' | 'yearly';
       date: string;

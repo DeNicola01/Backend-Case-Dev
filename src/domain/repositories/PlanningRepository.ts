@@ -19,4 +19,17 @@ export class PrismaPlanningRepository {
   async findAll() {
     return await prisma.planning.findMany();
   }
+
+  async findFirstByCustomerId(customerId: string) {
+    return await prisma.planning.findFirst({
+      where: { customerId },
+      orderBy: { targetDate: 'asc' }, // opcional: pega o planejamento mais próximo do prazo
+    });
+  }
+
+   async findMovementsByPlanningId(planningId: string) {
+    return prisma.movement.findMany({
+      where: { planningId }
+    });
+  }
 }

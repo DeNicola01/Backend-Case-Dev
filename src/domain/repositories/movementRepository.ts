@@ -5,7 +5,7 @@ export interface MovementData {
   id?: string;
   planningId: string;
   customerId: string;  // obrigatório
-  type: string;
+  type: 'positive' | 'negative'; // Tipo do evento (aporte, resgate, etc.)
   value: number;
   frequency: 'one_time' | 'monthly' | 'yearly';
   date: Date;          // Date, não string

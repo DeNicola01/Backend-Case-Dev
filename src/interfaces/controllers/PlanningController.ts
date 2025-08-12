@@ -1,5 +1,6 @@
 import { PrismaPlanningRepository } from '../../domain/repositories/PlanningRepository';
 import { FastifyRequest, FastifyReply } from 'fastify';
+import { generateSuggestions } from '../../usecases/FinancialSuggestionService';
 
 const repo = new PrismaPlanningRepository();
 
@@ -43,12 +44,34 @@ export async function createPlanningHandler(
       targetDate: new Date(targetDate),
       totalAssets,
       portfolioJson,
-      plannedAssets // or set to another appropriate value
+      plannedAssets
     });
 
     return reply.code(201).send(planning);
   } catch (error) {
     console.error(error);
     return reply.code(500).send({ message: 'Erro ao criar planejamento' });
+  }
+}
+
+export async function getPlanningSuggestionHandler(
+  request: FastifyRequest<{ Params: { customerId: string } }>,
+  reply: FastifyReply
+) {
+  const { customerId } = request.params;
+
+  try {
+    const planning = await repo.findFirstByCustomerId(customerId);
+
+    if (!planning) {
+      return reply.status(404).send({ message: "Planejamento não encontrado para este cliente" });
+    }
+
+    const suggestion = await generateSuggestions(planning.id);
+
+    return reply.send(suggestion);
+  } catch (error) {
+    console.error(error);
+    return reply.status(500).send({ message: "Erro ao buscar sugestão" });
   }
 }

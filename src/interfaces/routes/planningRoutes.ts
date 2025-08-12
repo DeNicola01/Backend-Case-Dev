@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createPlanningHandler } from '../controllers/PlanningController';
+import { createPlanningHandler, getPlanningSuggestionHandler } from '../controllers/PlanningController';
 
 const planningSchema = {
   type: 'object',
@@ -61,5 +61,52 @@ export default async function planningRoutes(app: FastifyInstance) {
     async function listPlanningsHandlerPlaceholder(request, reply) {
       reply.status(501).send({ message: 'Not implemented' });
     }
+  );
+
+  app.get(
+    '/suggestion/:customerId',
+    {
+      schema: {
+        tags: ['Planning'],
+        summary: 'Obter sugestões para alcançar a meta do planejamento do cliente',
+        params: {
+          type: 'object',
+          properties: {
+            customerId: { type: 'string', format: 'uuid' },
+          },
+          required: ['customerId'],
+        },
+        response: {
+          200: {
+            description: 'Sugestões geradas com sucesso',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              suggestion: {
+                type: ['object', 'null'],
+                nullable: true,
+                properties: {
+                  yearsRemaining: { type: 'number' },
+                  annualContribution: { type: 'number' },
+                  monthsRemaining: { type: 'number' },
+                  expectedAssetsIfNoAdditionalContribution: { type: 'number' },
+                  installments: { type: 'string' },
+                  targetValue: { type: 'number' },
+
+                },
+              },
+            },
+          },
+          404: {
+            description: 'Planejamento não encontrado para o cliente',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    getPlanningSuggestionHandler
   );
 }

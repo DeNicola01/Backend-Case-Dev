@@ -38,7 +38,7 @@ model Movement {
   id          String    @id @default(uuid())
   planningId  String
   customerId  String   // obrigatório
-  type        String
+  type        Type
   value       Float
   frequency   Frequency
   date        DateTime

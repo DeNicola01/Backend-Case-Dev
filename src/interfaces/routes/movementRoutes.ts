@@ -29,6 +29,7 @@ export default async function movementRoutes(app: FastifyInstance) {
             customerId: { type: "string", description: "ID do cliente" },
             type: {
               type: "string",
+              enum: ["positive", "negative"],
               description: "Tipo do evento (aporte, resgate, etc.)",
             },
             value: { type: "number", description: "Valor da movimentação" },
