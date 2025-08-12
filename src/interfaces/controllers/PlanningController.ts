@@ -67,11 +67,36 @@ export async function getPlanningSuggestionHandler(
       return reply.status(404).send({ message: "Planejamento não encontrado para este cliente" });
     }
 
+    // Se precisar buscar movements para sugestões, pode incluir aqui:
+    // const movements = await repo.findMovementsByPlanningId(planning.id);
+    // const suggestion = generateSuggestions(planning, movements);
+
     const suggestion = await generateSuggestions(planning.id);
 
     return reply.send(suggestion);
   } catch (error) {
     console.error(error);
     return reply.status(500).send({ message: "Erro ao buscar sugestão" });
+  }
+}
+
+export async function updatePlanningTotalAssetsHandler(
+  request: FastifyRequest<{ Params: { planningId: string }; Body: { totalAssets: number } }>,
+  reply: FastifyReply
+) {
+  const { planningId } = request.params;
+  const { totalAssets } = request.body;
+
+  try {
+    const updated = await repo.updateTotalAssets(planningId, totalAssets);
+
+    if (!updated) {
+      return reply.status(404).send({ message: 'Planejamento não encontrado' });
+    }
+
+    return reply.status(200).send(updated);
+  } catch (error) {
+    console.error(error);
+    return reply.status(500).send({ message: 'Erro ao atualizar totalAssets' });
   }
 }

@@ -19,6 +19,6 @@ export const env = {
   
   // Gera DATABASE_URL dinamicamente
   get DATABASE_URL(): string {
-    return `postgresql://${this.DB_USER}:${this.DB_PASSWORD}@db:5432/${this.DB_NAME}`;
+    return `postgresql://${this.DB_USER}:${this.DB_PASSWORD}@localhost:5432/${this.DB_NAME}`;
   }
 };

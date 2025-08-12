@@ -30,23 +30,31 @@ model Planning {
   plannedAssets Float
   goalName      String
   goalType      GoalType
+  createdAt     DateTime   @default(now())
+  updatedAt DateTime @updatedAt @default(now())
   customer      Customer   @relation(fields: [customerId], references: [id])
   movements     Movement[]
 }
 
 model Movement {
-  id          String    @id @default(uuid())
+  id          String       @id @default(uuid())
   planningId  String
-  customerId  String   // obrigatório
-  type        Type
+  customerId  String
+  type        MovementType
   value       Float
   frequency   Frequency
   date        DateTime
-  planning    Planning  @relation(fields: [planningId], references: [id])
-  customer Customer @relation(fields: [customerId], references: [id], name: "CustomerMovements")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  planning    Planning     @relation(fields: [planningId], references: [id])
+  customer    Customer     @relation(fields: [customerId], references: [id], name: "CustomerMovements")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
+
+enum MovementType {
+  positive
+  negative
+}
+
 
 
 enum GoalType {

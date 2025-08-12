@@ -1,3 +1,4 @@
+// src/domain/repositories/PlanningRepository.ts
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -13,23 +14,38 @@ export class PrismaPlanningRepository {
     portfolioJson: any;
     plannedAssets: number;
   }) {
-    return await prisma.planning.create({ data });
+    return prisma.planning.create({ data });
   }
 
   async findAll() {
-    return await prisma.planning.findMany();
+    return prisma.planning.findMany();
   }
 
-  async findFirstByCustomerId(customerId: string) {
-    return await prisma.planning.findFirst({
-      where: { customerId },
-      orderBy: { targetDate: 'asc' }, // opcional: pega o planejamento mais próximo do prazo
+  async findById(id: string) {
+    return prisma.planning.findUnique({
+      where: { id },
     });
   }
 
-   async findMovementsByPlanningId(planningId: string) {
+  async findFirstByCustomerId(customerId: string) {
+    return prisma.planning.findFirst({
+      where: { customerId },
+      orderBy: { targetDate: "asc" },
+    });
+  }
+
+  async findMovementsByPlanningId(planningId: string) {
     return prisma.movement.findMany({
-      where: { planningId }
+      where: { planningId },
+    });
+  }
+
+  async updateTotalAssets(planningId: string, totalAssets: number) {
+    return await prisma.planning.update({
+      where: { id: planningId },
+      data: {
+        totalAssets,
+      },
     });
   }
 }

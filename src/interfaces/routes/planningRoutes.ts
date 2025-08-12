@@ -1,5 +1,9 @@
 import { FastifyInstance } from 'fastify';
-import { createPlanningHandler, getPlanningSuggestionHandler } from '../controllers/PlanningController';
+import { 
+  createPlanningHandler, 
+  getPlanningSuggestionHandler,
+  updatePlanningTotalAssetsHandler // importe o handler do controller
+} from '../controllers/PlanningController';
 
 const planningSchema = {
   type: 'object',
@@ -22,6 +26,14 @@ const planningSchema = {
     portfolioJson: { type: 'object' },
     totalAssets: { type: 'number' },
     plannedAssets: { type: 'number' }
+  }
+};
+
+const updateTotalAssetsSchema = {
+  type: 'object',
+  required: ['totalAssets'],
+  properties: {
+    totalAssets: { type: 'number' }
   }
 };
 
@@ -92,7 +104,6 @@ export default async function planningRoutes(app: FastifyInstance) {
                   expectedAssetsIfNoAdditionalContribution: { type: 'number' },
                   installments: { type: 'string' },
                   targetValue: { type: 'number' },
-
                 },
               },
             },
@@ -108,5 +119,43 @@ export default async function planningRoutes(app: FastifyInstance) {
       },
     },
     getPlanningSuggestionHandler
+  );
+
+  app.put(
+    '/:planningId/totalAssets',
+    {
+      schema: {
+        tags: ['Planning'],
+        summary: 'Atualizar o totalAssets do planejamento',
+        params: {
+          type: 'object',
+          properties: {
+            planningId: { type: 'string', format: 'uuid' }
+          },
+          required: ['planningId']
+        },
+        body: updateTotalAssetsSchema,
+        response: {
+          200: {
+            description: 'totalAssets atualizado com sucesso',
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              totalAssets: { type: 'number' },
+              updatedAt: { type: 'string', format: 'date-time' },
+              // Você pode adicionar outros campos que quiser retornar aqui
+            }
+          },
+          404: {
+            description: 'Planejamento não encontrado',
+            type: 'object',
+            properties: {
+              message: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    updatePlanningTotalAssetsHandler
   );
 }
