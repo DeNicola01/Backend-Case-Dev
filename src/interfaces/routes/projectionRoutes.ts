@@ -5,32 +5,46 @@ const repo = new PrismaPlanningRepository();
 
 export default async function projectionRoutes(app: FastifyInstance) {
   app.get('/', {
-    schema: {
-      tags: ['Projection'],
-      summary: 'Gera projeção patrimonial até um ano definido (default 2060) usando taxa real composta, descontando eventos financeiros',
-      querystring: {
-        type: 'object',
-        required: ['customerId'],
-        properties: {
-          customerId: { type: 'string', format: 'uuid', description: 'ID do cliente para buscar planejamento' },
-          rate: { type: 'number', description: 'Taxa real a.a. em % (default 4%). Ex: 4' },
-          endYear: { type: 'number', description: 'Ano final para projeção (default 2060)', minimum: new Date().getFullYear() }
+  schema: {
+    tags: ['Projection'],
+    summary: 'Gera projeção patrimonial até um ano definido (default 2060) usando taxa real composta, descontando eventos financeiros',
+    querystring: {
+      type: 'object',
+      required: ['customerId'],
+      properties: {
+        customerId: { type: 'string', format: 'uuid', description: 'ID do cliente para buscar planejamento' },
+        rate: { type: 'number', description: 'Taxa real a.a. em % (default 4%). Ex: 4' },
+        endYear: { type: 'number', description: 'Ano final para projeção (default 2060)', minimum: new Date().getFullYear() }
+      }
+    },
+    response: {
+      200: {
+        description: 'Projeção ano a ano até o ano especificado',
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            year: { type: 'number' },
+            assets: { type: 'number' }
+          }
         }
       },
-      response: {
-        200: {
-          description: 'Projeção ano a ano até o ano especificado',
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              year: { type: 'number' },
-              assets: { type: 'number' }
-            }
-          }
+      400: {
+        description: 'Ano final inválido',
+        type: 'object',
+        properties: {
+          message: { type: 'string' }
+        }
+      },
+      404: {
+        description: 'Planejamento não encontrado para este cliente',
+        type: 'object',
+        properties: {
+          message: { type: 'string' }
         }
       }
     }
+  }
   }, async (request, reply) => {
     const { customerId, rate = 4, endYear = 2060 } = request.query as { customerId: string; rate?: number; endYear?: number };
 

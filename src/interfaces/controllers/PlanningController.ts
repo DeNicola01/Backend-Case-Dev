@@ -1,19 +1,20 @@
-import { PrismaPlanningRepository } from '../../domain/repositories/PlanningRepository';
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { generateSuggestions } from '../../usecases/FinancialSuggestionService';
+import { PrismaPlanningRepository } from "../../domain/repositories/PlanningRepository";
+import { FastifyRequest, FastifyReply } from "fastify";
+import { generateSuggestions } from "../../usecases/FinancialSuggestionService";
+import { prisma } from "../../shared/prisma";
 
 const repo = new PrismaPlanningRepository();
 
 function getCategory(alignmentPercent: number): string {
-  if (alignmentPercent > 90) return 'verde';
-  if (alignmentPercent > 70) return 'amarelo-claro';
-  if (alignmentPercent > 50) return 'amarelo-escuro';
-  return 'vermelho';
+  if (alignmentPercent > 90) return "verde";
+  if (alignmentPercent > 70) return "amarelo-claro";
+  if (alignmentPercent > 50) return "amarelo-escuro";
+  return "vermelho";
 }
 
 interface CreatePlanningBody {
   customerId: string;
-  goalType: 'retirement' | 'short_term' | 'medium_term';
+  goalType: "retirement" | "short_term" | "medium_term";
   goalName: string;
   targetValue: number;
   targetDate: string;
@@ -25,7 +26,15 @@ export async function createPlanningHandler(
   request: FastifyRequest<{ Body: CreatePlanningBody }>,
   reply: FastifyReply
 ) {
-  const { customerId, goalType, goalName, targetValue, targetDate, totalAssets, plannedAssets } = request.body;
+  const {
+    customerId,
+    goalType,
+    goalName,
+    targetValue,
+    targetDate,
+    totalAssets,
+    plannedAssets,
+  } = request.body;
 
   const alignmentPercent = (totalAssets / targetValue) * 100;
   const category = getCategory(alignmentPercent);
@@ -44,15 +53,20 @@ export async function createPlanningHandler(
       targetDate: new Date(targetDate),
       totalAssets,
       portfolioJson,
-      plannedAssets
+      plannedAssets,
     });
 
     return reply.code(201).send(planning);
   } catch (error) {
     console.error(error);
-    return reply.code(500).send({ message: 'Erro ao criar planejamento' });
+    return reply.code(500).send({ message: "Erro ao criar planejamento" });
   }
 }
+
+export const getAllPlannings = async (req: any, reply: any) => {
+  const plannings = await prisma.planning.findMany(); // já traz createdAt/updatedAt
+  return plannings;
+};
 
 export async function getPlanningSuggestionHandler(
   request: FastifyRequest<{ Params: { customerId: string } }>,
@@ -64,7 +78,9 @@ export async function getPlanningSuggestionHandler(
     const planning = await repo.findFirstByCustomerId(customerId);
 
     if (!planning) {
-      return reply.status(404).send({ message: "Planejamento não encontrado para este cliente" });
+      return reply
+        .status(404)
+        .send({ message: "Planejamento não encontrado para este cliente" });
     }
 
     // Se precisar buscar movements para sugestões, pode incluir aqui:
@@ -81,7 +97,10 @@ export async function getPlanningSuggestionHandler(
 }
 
 export async function updatePlanningTotalAssetsHandler(
-  request: FastifyRequest<{ Params: { planningId: string }; Body: { totalAssets: number } }>,
+  request: FastifyRequest<{
+    Params: { planningId: string };
+    Body: { totalAssets: number };
+  }>,
   reply: FastifyReply
 ) {
   const { planningId } = request.params;
@@ -91,12 +110,12 @@ export async function updatePlanningTotalAssetsHandler(
     const updated = await repo.updateTotalAssets(planningId, totalAssets);
 
     if (!updated) {
-      return reply.status(404).send({ message: 'Planejamento não encontrado' });
+      return reply.status(404).send({ message: "Planejamento não encontrado" });
     }
 
     return reply.status(200).send(updated);
   } catch (error) {
     console.error(error);
-    return reply.status(500).send({ message: 'Erro ao atualizar totalAssets' });
+    return reply.status(500).send({ message: "Erro ao atualizar totalAssets" });
   }
 }
