@@ -7,6 +7,9 @@ WORKDIR /app
 # Copia package.json e package-lock.json para instalar dependências
 COPY package*.json ./
 
+# Cria um volume para node_modules antes de instalar
+VOLUME ["/app/node_modules"]
+
 # Instala dependências
 RUN npm ci
 
