@@ -9,4 +9,7 @@ BACKEND_PORT=3000
 # ✅ Corrigido:
 DATABASE_URL=postgresql://planner:plannerpw@db:5432/plannerdb */
 
+npm install --save-dev jest ts-jest @types/jest
+
+
 

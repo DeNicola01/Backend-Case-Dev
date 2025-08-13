@@ -30,6 +30,7 @@ describe("Projection Routes", () => {
         targetDate: new Date(new Date().getFullYear() + 10, 11, 31),
         totalAssets: 100000,
         plannedAssets: 50000,
+        portfolioJson: {},
         goalName: "Aposentadoria",
         goalType: "retirement",
       },

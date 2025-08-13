@@ -1,25 +1,17 @@
-FROM node:20
+# Use Node 20 Alpine
+FROM node:20-alpine
 
-# Diretório de trabalho
+# Define diretório de trabalho
 WORKDIR /app
 
-# Copia package.json e package-lock.json primeiro
+# Copia package.json e package-lock.json para instalar dependências
 COPY package*.json ./
 
-# Ajusta permissões do diretório para o usuário node
-RUN chown -R node:node /app
+# Instala dependências
+RUN npm ci
 
-# Usa o usuário node
-USER node
+# Copia o restante do código
+COPY . .
 
-# Instala dependências principais
-RUN npm install
-
-# Instala ts-jest e types de Jest
-RUN npm install --save-dev ts-jest @types/jest
-
-# Copia o restante do projeto
-COPY --chown=node:node . .
-
-# Comando padrão
-CMD ["npm", "start"]
+# Define comando padrão (para o container backend)
+CMD ["npm", "run", "dev"]

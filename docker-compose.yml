@@ -1,4 +1,4 @@
-
+version: "3.9"
 
 services:
   backend:
@@ -9,7 +9,8 @@ services:
     ports:
       - "${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"
     volumes:
-      - .:/app
+      - .:/app:cached
+      - /app/node_modules
     command: npm run dev
     env_file:
       - .env
@@ -25,13 +26,14 @@ services:
       dockerfile: Dockerfile
     container_name: MigrationModule
     volumes:
-      - .:/app
+      - .:/app:cached
+      - /app/node_modules
     depends_on:
       - db
     env_file:
       - .env
     working_dir: /app
-    command: npx prisma migrate deploy
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed"
     networks:
       - backend
 
@@ -41,13 +43,15 @@ services:
       dockerfile: Dockerfile
     container_name: TestModule
     volumes:
-      - .:/app
+      - .:/app:cached
+      - /app/node_modules
+      - coverage_data:/app/coverage
     depends_on:
       - db
     env_file:
       - .env
     working_dir: /app
-    command: npx jest --coverage
+    command: sh -c "npx prisma generate && npx jest --coverage"
     networks:
       - backend
 
@@ -72,3 +76,4 @@ networks:
 
 volumes:
   pg_data:
+  coverage_data:

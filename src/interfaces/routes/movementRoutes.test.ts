@@ -33,6 +33,7 @@ describe("Movement Routes", () => {
         targetDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
         totalAssets: 50000,
         plannedAssets: 20000,
+        portfolioJson: {},
         goalName: "Aposentadoria",
         goalType: "retirement",
       },
