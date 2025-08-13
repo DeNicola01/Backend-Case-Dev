@@ -1,0 +1,12 @@
+
+
+/* .env
+DB_USER=planner
+DB_PASSWORD=plannerpw
+DB_NAME=plannerdb
+BACKEND_PORT=3000
+
+# ✅ Corrigido:
+DATABASE_URL=postgresql://planner:plannerpw@db:5432/plannerdb */
+
+
