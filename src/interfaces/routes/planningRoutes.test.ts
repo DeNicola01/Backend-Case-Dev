@@ -23,24 +23,38 @@ describe("Planning Routes", () => {
       },
     });
     createdCustomerId = customer.id;
+
+    // Criar planejamento para garantir que existe para update/suggestion
+    const planning = await prisma.planning.create({
+      data: {
+        customerId: createdCustomerId,
+        goalName: "Aposentadoria",
+        goalType: "retirement",
+        targetValue: 100000,
+        targetDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365), // 1 ano no futuro
+        portfolioJson: {},
+        totalAssets: 50000,
+        plannedAssets: 20000,
+      },
+    });
+    createdPlanningId = planning.id;
   });
 
   afterAll(async () => {
     await prisma.$disconnect();
-
     await app.close();
   });
 
   test("POST / - cria um planejamento", async () => {
     const mockPlanning = {
       customerId: createdCustomerId,
-      goalName: "Aposentadoria",
-      goalType: "retirement",
-      targetValue: 100000,
-      targetDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString(), // 1 ano no futuro
+      goalName: "Investimento",
+      goalType: "medium_term",
+      targetValue: 200000,
+      targetDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 2).toISOString(),
       portfolioJson: {},
-      totalAssets: 50000,
-      plannedAssets: 20000,
+      totalAssets: 100000,
+      plannedAssets: 50000,
     };
 
     const response = await app.inject({
@@ -52,8 +66,6 @@ describe("Planning Routes", () => {
     expect(response.statusCode).toBe(201);
 
     const body = JSON.parse(response.payload);
-
-    // Verifica se os campos importantes foram criados e retornados
     expect(body.customerId).toBe(mockPlanning.customerId);
     expect(body.goalName).toBe(mockPlanning.goalName);
     expect(body.goalType).toBe(mockPlanning.goalType);
@@ -62,7 +74,46 @@ describe("Planning Routes", () => {
     expect(body.portfolioJson).toMatchObject(mockPlanning.portfolioJson);
     expect(body.totalAssets).toBe(mockPlanning.totalAssets);
     expect(body.plannedAssets).toBe(mockPlanning.plannedAssets);
+  });
 
-    createdPlanningId = body.id;
+  test("PUT /:planningId/totalAssets - atualiza totalAssets do planejamento", async () => {
+    const newTotalAssets = 123456.78;
+
+    const response = await app.inject({
+      method: "PUT",
+      url: `/plannings/${createdPlanningId}/totalAssets`,
+      payload: { totalAssets: newTotalAssets },
+    });
+
+    expect(response.statusCode).toBe(200);
+
+    const body = JSON.parse(response.payload);
+    expect(body).toHaveProperty("id", createdPlanningId);
+    expect(body).toHaveProperty("totalAssets", newTotalAssets);
+    expect(new Date(body.updatedAt).toString()).not.toBe("Invalid Date");
+  });
+
+  test("PUT /:planningId/totalAssets - retorna 500 se planejamento não encontrado", async () => {
+    const fakePlanningId = "00000000-0000-0000-0000-000000000000";
+
+    const response = await app.inject({
+      method: "PUT",
+      url: `/plannings/${fakePlanningId}/totalAssets`,
+      payload: { totalAssets: 1000 },
+    });
+
+    expect(response.statusCode).toBe(500);
+
+    const body = JSON.parse(response.payload);
+  });
+
+  test("PUT /:planningId/totalAssets - retorna 400 se body inválido", async () => {
+    const response = await app.inject({
+      method: "PUT",
+      url: `/plannings/${createdPlanningId}/totalAssets`,
+      payload: { wrongField: 1000 }, // campo inválido
+    });
+
+    expect(response.statusCode).toBe(400);
   });
 });

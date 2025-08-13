@@ -1,4 +1,4 @@
-import { prisma } from "../../shared/prisma"; // sua instância Prisma
+import { prisma } from "../../shared/prisma";
 import { buildFastify } from "../../main/server";
 import { beforeAll, afterAll, describe, test, expect } from "@jest/globals";
 import type { FastifyInstance } from "fastify";
@@ -27,23 +27,33 @@ describe("Movement Routes", () => {
 
     // Criar planejamento para associar às movimentações
     const planning = await prisma.planning.create({
-  data: {
-    customerId: createdCustomerId,
-    targetValue: 100000,
-    targetDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-    totalAssets: 50000,
-    plannedAssets: 20000,
-    goalName: "Aposentadoria",
-    goalType: "retirement",
-  },
-});
-createdPlanningId = planning.id;
-  })
+      data: {
+        customerId: createdCustomerId,
+        targetValue: 100000,
+        targetDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+        totalAssets: 50000,
+        plannedAssets: 20000,
+        goalName: "Aposentadoria",
+        goalType: "retirement",
+      },
+    });
+    createdPlanningId = planning.id;
+  });
 
   afterAll(async () => {
-    // Apagar movimentações primeiro para evitar FK
-    await prisma.$disconnect();
+    // Apagar movimentações criadas
+    if (createdMovementId) {
+      await prisma.movement.deleteMany({ where: { id: createdMovementId } });
+    }
+    // Apagar planejamento e cliente criados
+    if (createdPlanningId) {
+      await prisma.planning.deleteMany({ where: { id: createdPlanningId } });
+    }
+    if (createdCustomerId) {
+      await prisma.customer.deleteMany({ where: { id: createdCustomerId } });
+    }
 
+    await prisma.$disconnect();
     await app.close();
   });
 
@@ -51,7 +61,7 @@ createdPlanningId = planning.id;
     const mockMovement = {
       planningId: createdPlanningId,
       customerId: createdCustomerId,
-      type: "aporte",
+      type: "negative", // Verifique se "aporte" é válido no enum do Prisma, caso contrário ajuste
       value: 1000,
       frequency: "one_time",
       date: new Date().toISOString(),
@@ -102,7 +112,7 @@ createdPlanningId = planning.id;
 
   test("PUT /:id - atualiza movimentação", async () => {
     const updatePayload = {
-      type: "resgate",
+      type: "positive", // Verifique se "resgate" é válido no enum do Prisma
       value: 500,
       frequency: "monthly",
       date: new Date().toISOString(),

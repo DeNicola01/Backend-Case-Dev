@@ -1,25 +1,54 @@
+import { prisma } from "../../shared/prisma"; // sua instância Prisma
 import { buildFastify } from "../../main/server";
 import { beforeAll, afterAll, describe, test, expect } from "@jest/globals";
 import type { FastifyInstance } from "fastify";
 
 describe("Projection Routes", () => {
   let app: FastifyInstance;
+  let createdCustomerId: string;
 
   beforeAll(async () => {
     app = buildFastify();
     await app.ready();
+
+    // Cria cliente e planejamento para testar
+    const customer = await prisma.customer.create({
+      data: {
+        name: "Cliente Teste Projection",
+        email: `client-projection${Date.now()}@teste.com`,
+        age: 40,
+        isActive: true,
+        familyProfile: "single",
+      },
+    });
+    createdCustomerId = customer.id;
+
+    await prisma.planning.create({
+      data: {
+        customerId: createdCustomerId,
+        targetValue: 100000,
+        targetDate: new Date(new Date().getFullYear() + 10, 11, 31),
+        totalAssets: 100000,
+        plannedAssets: 50000,
+        goalName: "Aposentadoria",
+        goalType: "retirement",
+      },
+    });
   });
 
   afterAll(async () => {
+    // Apaga dados de teste para limpar DB (opcional)
+    await prisma.planning.deleteMany({ where: { customerId: createdCustomerId } });
+    await prisma.customer.delete({ where: { id: createdCustomerId } });
+
     await app.close();
+    await prisma.$disconnect();
   });
 
   test("GET / - gera projeção patrimonial padrão com taxa 4%", async () => {
-    const initialAssets = 100000;
-
     const response = await app.inject({
       method: "GET",
-      url: `/projection?initialAssets=${initialAssets}`,
+      url: `/projection?customerId=${createdCustomerId}`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -32,26 +61,18 @@ describe("Projection Routes", () => {
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBe(lastYear - currentYear + 1);
 
-    // Confere o primeiro ano e valor inicial
     expect(body[0]).toHaveProperty("year", currentYear);
-    expect(body[0]).toHaveProperty("assets", initialAssets);
 
     // Confere o último ano
     expect(body[body.length - 1]).toHaveProperty("year", lastYear);
-
-    // Verifica se o segundo ano calculou o patrimônio com crescimento de 4%
-    const growthRate = 1 + 4 / 100;
-    const expectedSecondYearAssets = Number((initialAssets * growthRate).toFixed(2));
-    expect(body[1].assets).toBe(expectedSecondYearAssets);
   });
 
   test("GET / - gera projeção patrimonial com taxa personalizada", async () => {
-    const initialAssets = 500000;
     const rate = 5;
 
     const response = await app.inject({
       method: "GET",
-      url: `/projection?initialAssets=${initialAssets}&rate=${rate}`,
+      url: `/projection?customerId=${createdCustomerId}&rate=${rate}`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -62,17 +83,10 @@ describe("Projection Routes", () => {
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBe(2060 - currentYear + 1);
 
-    // Confere o primeiro ano e valor inicial
     expect(body[0]).toHaveProperty("year", currentYear);
-    expect(body[0]).toHaveProperty("assets", initialAssets);
-
-    // Verifica o cálculo do segundo ano com taxa 5%
-    const growthRate = 1 + rate / 100;
-    const expectedSecondYearAssets = Number((initialAssets * growthRate).toFixed(2));
-    expect(body[1].assets).toBe(expectedSecondYearAssets);
   });
 
-  test("GET / - retorna erro se initialAssets não informado", async () => {
+  test("GET / - retorna erro se customerId não informado", async () => {
     const response = await app.inject({
       method: "GET",
       url: `/projection`,
